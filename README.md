@@ -4,7 +4,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-![AegisLogix Dashboard](./demo.png)
+![AegisLogix Dashboard Workflow](./demo.gif)
 
 AegisLogix is a full-stack, AI-powered web application designed to detect and analyze damage in shipping containers using computer vision.
 
