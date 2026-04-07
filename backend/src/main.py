@@ -5,7 +5,7 @@ import base64
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from engine import AegisGuard
+from src.engine import AegisGuard
 
 app = FastAPI(title="AegisLogix Control API")
 
