@@ -4,6 +4,16 @@ FROM python:3.10-slim
 # Set the working directory inside the container
 WORKDIR /app
 
+# Install required system dependencies for OpenCV and Ultralytics
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libxcb1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # The python-multipart/opencv dependencies
 COPY requirements.txt .
 
