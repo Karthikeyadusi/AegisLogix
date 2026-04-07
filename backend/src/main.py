@@ -49,6 +49,10 @@ async def analyze_container(file: UploadFile = File(...)):
         "image_data": img_base64
     })
 
+@app.get("/")
+def health_check():
+    return {"status": "AegisLogix Online"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
