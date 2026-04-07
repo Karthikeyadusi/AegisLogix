@@ -74,8 +74,10 @@ export default function Analyzer() {
     const formData = new FormData();
     formData.append('file', file);
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
     try {
-      const response = await fetch('http://127.0.0.1:8000/analyze', {
+      const response = await fetch(`${API_URL}/analyze`, {
         method: 'POST',
         body: formData,
       });
@@ -88,7 +90,7 @@ export default function Analyzer() {
       setResult(data);
     } catch (err) {
       console.error('Analysis failed:', err);
-      setError('Failed to connect to the analysis engine. Ensure the local backend is running at http://127.0.0.1:8000');
+      setError(`Failed to connect to the analysis engine. Ensure the backend is running at ${API_URL}`);
     } finally {
       setLoading(false);
     }

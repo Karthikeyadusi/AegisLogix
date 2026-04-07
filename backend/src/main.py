@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 import base64
@@ -8,10 +9,18 @@ from engine import AegisGuard
 
 app = FastAPI(title="AegisLogix Control API")
 
+# Define allowed origins (Local dev + dynamic Vercel deploy via env)
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
 # Allow React to talk to FastAPI
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        FRONTEND_URL
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
