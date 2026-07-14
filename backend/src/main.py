@@ -1,11 +1,17 @@
 import os
+import base64
+import logging
+
 import cv2
 import numpy as np
-import base64
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+
+from src.config import ALLOWED_CONTENT_TYPES, MAX_UPLOAD_SIZE_BYTES
 from src.engine import AegisGuard
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AegisLogix Control API")
 
@@ -27,21 +33,54 @@ app.add_middleware(
 
 guard = AegisGuard()
 
+
 @app.post("/analyze")
-async def analyze_container(file: UploadFile = File(...)):
-    # 1. Read the uploaded image
-    data = await file.read()
+def analyze_container(file: UploadFile = File(...)) -> JSONResponse:
+    """Accept an uploaded image, run damage detection, and return findings."""
+
+    # --- Validate content type ---
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        logger.warning("Rejected upload with content type: %s", file.content_type)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{file.content_type}'. Accepted types: JPEG, PNG, WebP, BMP, TIFF.",
+        )
+
+    # --- Read and validate size ---
+    data: bytes = file.file.read()
+
+    if len(data) > MAX_UPLOAD_SIZE_BYTES:
+        size_mb = len(data) / (1024 * 1024)
+        logger.warning("Rejected oversized upload: %.1f MB", size_mb)
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size ({size_mb:.1f} MB) exceeds the maximum allowed size of {MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB.",
+        )
+
+    if len(data) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    # --- Decode image ---
     nparr = np.frombuffer(data, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    # 2. Run the AI scan
-    processed_img, findings = guard.scan(img)
+    if img is None:
+        logger.warning("cv2.imdecode returned None for file: %s", file.filename)
+        raise HTTPException(
+            status_code=400,
+            detail="Unable to decode image. The file may be corrupted or in an unsupported format.",
+        )
 
-    # 3. Encode image to Base64
+    # --- Run the AI scan ---
+    logger.info("Starting scan for '%s' (%d bytes)", file.filename, len(data))
+    processed_img, findings = guard.scan(img)
+    logger.info("Scan complete: %d issues found", len(findings))
+
+    # --- Encode image to Base64 ---
     _, buffer = cv2.imencode('.jpg', processed_img)
     img_base64 = base64.b64encode(buffer).decode('utf-8')
 
-    # 4. Return the Dashboard Data Payload
+    # --- Return the Dashboard Data Payload ---
     return JSONResponse(content={
         "status": "success",
         "total_issues": len(findings),
@@ -49,9 +88,11 @@ async def analyze_container(file: UploadFile = File(...)):
         "image_data": img_base64
     })
 
+
 @app.get("/")
-def health_check():
+def health_check() -> dict[str, str]:
     return {"status": "AegisLogix Online"}
+
 
 if __name__ == "__main__":
     import uvicorn

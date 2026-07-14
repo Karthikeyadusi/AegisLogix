@@ -31,9 +31,17 @@ export default function Analyzer() {
     }
   };
 
+  const MAX_FILE_SIZE_MB = 10;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
   const processFile = (selectedFile: File) => {
     if (!selectedFile.type.startsWith('image/')) {
       setError('Please upload a valid image file.');
+      return;
+    }
+    if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+      const sizeMB = (selectedFile.size / (1024 * 1024)).toFixed(1);
+      setError(`File size (${sizeMB} MB) exceeds the maximum allowed size of ${MAX_FILE_SIZE_MB} MB.`);
       return;
     }
     setFile(selectedFile);
@@ -83,14 +91,21 @@ export default function Analyzer() {
       });
 
       if (!response.ok) {
-        throw new Error(`Server error: ${response.statusText}`);
+        const errorBody = await response.json().catch(() => null);
+        const detail = errorBody?.detail || response.statusText;
+        throw new Error(detail);
       }
 
       const data: AnalysisResult = await response.json();
       setResult(data);
     } catch (err) {
-      console.error('Analysis failed:', err);
-      setError(`Failed to connect to the analysis engine. Ensure the backend is running at ${API_URL}`);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Analysis failed:', message);
+      if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
+        setError(`Failed to connect to the analysis engine. Ensure the backend is running at ${API_URL}`);
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
