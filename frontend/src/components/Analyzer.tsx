@@ -119,6 +119,59 @@ export default function Analyzer() {
     setShowProcessed(true);
   };
 
+  const handleExportJson = () => {
+    if (!result) return;
+    const jsonStr = JSON.stringify(result, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", url);
+    downloadAnchor.setAttribute("download", `aegislogix_analysis_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadReport = () => {
+    if (!result || !file) return;
+    const criticalCount = result.details.filter(d => d.conf >= 0.70).length;
+    const minorCount = result.details.filter(d => d.conf < 0.70).length;
+    const reportLines = [
+      "==================================================",
+      "          AEGISLOGIX VISION INSPECTION REPORT     ",
+      "==================================================",
+      `Timestamp: ${new Date().toLocaleString()}`,
+      `Target Image: ${file.name}`,
+      `Analysis Status: ${result.status.toUpperCase()}`,
+      `Total Issues Identified: ${result.total_issues}`,
+      `  - Critical Severity (Conf >= 70%): ${criticalCount}`,
+      `  - Minor Severity (Conf < 70%): ${minorCount}`,
+      "",
+      "--------------------------------------------------",
+      "DETECTION BREAKDOWN:",
+      "--------------------------------------------------",
+      ...result.details.map((detail, idx) => (
+        `${idx + 1}. [${detail.class.toUpperCase()}]` +
+        ` - Confidence: ${(detail.conf * 100).toFixed(1)}%` +
+        ` - Severity: ${detail.conf >= 0.70 ? 'CRITICAL' : 'MINOR'}`
+      )),
+      "--------------------------------------------------",
+      "AegisLogix v1.1.0 (STABLE) - Inspection Telemetry",
+      "=================================================="
+    ];
+    const reportText = reportLines.join("\n");
+    const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", url);
+    downloadAnchor.setAttribute("download", `aegislogix_report_${file.name.split('.')[0] || 'container'}.txt`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
       {/* Header */}
@@ -358,11 +411,17 @@ export default function Analyzer() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-cyan-500/30 text-slate-300 transition-all group">
+                  <button
+                    onClick={handleDownloadReport}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-cyan-500/30 text-slate-300 transition-all group"
+                  >
                     <FileDown className="w-6 h-6 text-slate-400 group-hover:text-cyan-400" />
                     <span className="text-xs font-bold uppercase tracking-wider">Download Report</span>
                   </button>
-                  <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-cyan-500/30 text-slate-300 transition-all group">
+                  <button
+                    onClick={handleExportJson}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-cyan-500/30 text-slate-300 transition-all group"
+                  >
                     <FileJson className="w-6 h-6 text-slate-400 group-hover:text-cyan-400" />
                     <span className="text-xs font-bold uppercase tracking-wider">Export JSON</span>
                   </button>
