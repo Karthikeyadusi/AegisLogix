@@ -125,7 +125,7 @@ export function ImageCanvas({
               className="w-full h-auto max-h-[70vh] object-contain block"
             />
           ) : (
-            <div className="relative w-full h-full flex items-center justify-center">
+            <div className="relative inline-block max-w-full">
               <motion.img
                 key="raw"
                 initial={{ opacity: 0 }}

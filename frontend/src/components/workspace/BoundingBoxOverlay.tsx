@@ -1,4 +1,3 @@
-import { calculateNormalizedBounds } from '../../lib/geometry';
 import type { DetectionDetail } from '../../types/api';
 
 export interface BoundingBoxOverlayProps {
@@ -26,18 +25,21 @@ export function BoundingBoxOverlay({
 
   const activeIndex = hoveredIndex !== null ? hoveredIndex : selectedIndex;
 
+  // Compute resolution scale factor so stroke and text remain legible at any image size
+  const baseDim = Math.min(naturalWidth, naturalHeight);
+  const scaleFactor = Math.max(0.8, baseDim / 600);
+
   return (
     <svg
       className="absolute inset-0 w-full h-full pointer-events-none z-10"
+      viewBox={`0 0 ${naturalWidth} ${naturalHeight}`}
       preserveAspectRatio="none"
       aria-label="Detection Bounding Boxes Vector Overlay"
     >
       {detections.map((detail, idx) => {
-        const bounds = calculateNormalizedBounds(
-          detail.bbox,
-          naturalWidth,
-          naturalHeight
-        );
+        const [x1, y1, x2, y2] = detail.bbox;
+        const width = Math.max(0, x2 - x1);
+        const height = Math.max(0, y2 - y1);
 
         const isSelected = selectedIndex === idx;
         const isHovered = hoveredIndex === idx;
@@ -47,13 +49,24 @@ export function BoundingBoxOverlay({
 
         const isCritical = detail.confidence >= 0.7;
         const strokeColor = isCritical ? '#f87171' : '#fbbf24'; // Red-400 vs Amber-400
-        const fillColor = isCritical ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)';
+        const fillColor = isCritical ? 'rgba(239, 68, 68, 0.18)' : 'rgba(245, 158, 11, 0.18)';
 
         const opacity = isDimmed ? 0.25 : 1.0;
-        const strokeWidth = isHighlighted ? 3 : 2;
+        const strokeWidth = (isHighlighted ? 3.5 : 2) * scaleFactor;
+
+        const fontSize = Math.max(10, Math.round(11 * scaleFactor));
+        const paddingX = Math.round(5 * scaleFactor);
+        const paddingY = Math.round(3 * scaleFactor);
 
         const confPct = (detail.confidence * 100).toFixed(1);
-        const labelText = `${detail.class_name} (${confPct}%)`;
+        const labelText = `${detail.class_name.toUpperCase()} (${confPct}%)`;
+
+        const charWidth = fontSize * 0.62;
+        const badgeWidth = labelText.length * charWidth + paddingX * 2;
+        const badgeHeight = fontSize + paddingY * 2;
+
+        // Position badge above bbox if room allows, else inside
+        const badgeY = y1 - badgeHeight >= 0 ? y1 - badgeHeight : y1;
 
         return (
           <g
@@ -69,34 +82,37 @@ export function BoundingBoxOverlay({
           >
             {/* Vector Rectangle */}
             <rect
-              x={`${bounds.leftPct}%`}
-              y={`${bounds.topPct}%`}
-              width={`${bounds.widthPct}%`}
-              height={`${bounds.heightPct}%`}
+              x={x1}
+              y={y1}
+              width={width}
+              height={height}
               fill={fillColor}
               stroke={strokeColor}
               strokeWidth={strokeWidth}
-              rx={2}
+              rx={2 * scaleFactor}
             />
 
-            {/* Class Label Badge */}
-            <foreignObject
-              x={`${bounds.leftPct}%`}
-              y={`${Math.max(0, bounds.topPct - 4)}%`}
-              width="200"
-              height="30"
-              className="overflow-visible"
+            {/* Label Background Badge */}
+            <rect
+              x={x1}
+              y={badgeY}
+              width={badgeWidth}
+              height={badgeHeight}
+              fill={strokeColor}
+              rx={2 * scaleFactor}
+            />
+
+            {/* Label Text */}
+            <text
+              x={x1 + paddingX}
+              y={badgeY + fontSize + paddingY - 1}
+              fill="#09090b"
+              fontSize={fontSize}
+              fontWeight="bold"
+              fontFamily="monospace"
             >
-              <div
-                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-950 shadow-sm transition-transform duration-150"
-                style={{
-                  backgroundColor: strokeColor,
-                  transform: isHighlighted ? 'scale(1.05)' : 'scale(1)',
-                }}
-              >
-                {labelText}
-              </div>
-            </foreignObject>
+              {labelText}
+            </text>
           </g>
         );
       })}
