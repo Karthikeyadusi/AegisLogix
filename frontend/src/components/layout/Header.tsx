@@ -12,13 +12,13 @@ export function Header({ isReady, statusText, version }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-zinc-900 border border-zinc-800 rounded">
-            <Shield className="w-5 h-5 text-zinc-100" />
+          <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded shadow-sm">
+            <Shield className="w-5 h-5 text-blue-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold tracking-tight text-zinc-100 text-base">
-                AegisLogix
+                AegisLogix <span className="text-blue-400">Vision</span>
               </span>
               <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
                 {version ? `v${version}` : 'v2.0.0'}
