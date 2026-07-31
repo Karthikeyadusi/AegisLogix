@@ -1,13 +1,60 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Industrial Design Tokens (Zinc Matte Palette) */
+  --color-surface-base: #09090b;
+  --color-surface-panel: #121215;
+  --color-surface-subtle: #18181b;
+  --color-surface-element: #27272a;
+
+  --color-border-subtle: #27272a;
+  --color-border-medium: #3f3f46;
+  --color-border-focus: #52525b;
+
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #a1a1aa;
+  --color-text-tertiary: #71717a;
+
+  /* Muted Industrial Severity Colors */
+  --color-severity-critical-bg: #450a0a;
+  --color-severity-critical-border: #7f1d1d;
+  --color-severity-critical-text: #f87171;
+
+  --color-severity-minor-bg: #451a03;
+  --color-severity-minor-border: #78350f;
+  --color-severity-minor-text: #fbbf24;
+
+  --color-status-online-text: #4ade80;
+  --color-status-online-bg: #052e16;
 }
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-200 font-sans min-h-screen;
+    background-color: var(--color-surface-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Accessibility Focus Rings */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-surface-base), 0 0 0 4px #a1a1aa;
+    border-radius: 4px;
+  }
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
