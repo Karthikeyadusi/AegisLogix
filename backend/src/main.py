@@ -1,101 +1,125 @@
-import os
-import base64
-import logging
+"""AegisLogix application factory.
 
-import cv2
-import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+Creates and configures the FastAPI application:
+  - Structured logging
+  - CORS middleware
+  - Exception handlers
+  - Lifespan events (model load / unload)
+  - Router registration
+"""
+
+import logging
+import sys
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.config import ALLOWED_CONTENT_TYPES, MAX_UPLOAD_SIZE_BYTES
-from src.engine import AegisGuard
+from src.core.config import get_settings
+from src.core.exceptions import register_exception_handlers
+from src.ml.engine import AegisGuard
+from src.services.analyzer import AnalyzerService
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="AegisLogix Control API")
 
-# Define allowed origins (Local dev + dynamic Vercel deploy via env)
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+# ---------------------------------------------------------------------------
+# Lifespan
+# ---------------------------------------------------------------------------
 
-# Allow React to talk to FastAPI
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://aegis-logix.vercel.app",
-        "https://aegis-logix.vercel.app/",
-        FRONTEND_URL
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Manage application startup and shutdown.
 
-guard = AegisGuard()
+    On startup:
+      - Load the ONNX model into an ``AegisGuard`` instance.
+      - Create the ``AnalyzerService`` and attach both to ``app.state``.
 
+    On shutdown:
+      - Log graceful shutdown.
+    """
+    settings = get_settings()
 
-@app.post("/analyze")
-def analyze_container(file: UploadFile = File(...)) -> JSONResponse:
-    """Accept an uploaded image, run damage detection, and return findings."""
+    logger.info("Loading AegisGuard engine from %s …", settings.model_path)
+    engine = AegisGuard(
+        model_path=settings.model_path,
+        confidence_threshold=settings.confidence_threshold,
+        inference_image_size=settings.inference_image_size,
+    )
 
-    # --- Validate content type ---
-    if file.content_type not in ALLOWED_CONTENT_TYPES:
-        logger.warning("Rejected upload with content type: %s", file.content_type)
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file type '{file.content_type}'. Accepted types: JPEG, PNG, WebP, BMP, TIFF.",
-        )
+    app.state.engine = engine
+    app.state.analyzer = AnalyzerService(engine=engine, settings=settings)
 
-    # --- Read and validate size ---
-    data: bytes = file.file.read()
+    logger.info("AegisLogix v%s ready — accepting requests", settings.app_version)
 
-    if len(data) > MAX_UPLOAD_SIZE_BYTES:
-        size_mb = len(data) / (1024 * 1024)
-        logger.warning("Rejected oversized upload: %.1f MB", size_mb)
-        raise HTTPException(
-            status_code=400,
-            detail=f"File size ({size_mb:.1f} MB) exceeds the maximum allowed size of {MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB.",
-        )
+    yield  # Application is running.
 
-    if len(data) == 0:
-        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
-
-    # --- Decode image ---
-    nparr = np.frombuffer(data, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-    if img is None:
-        logger.warning("cv2.imdecode returned None for file: %s", file.filename)
-        raise HTTPException(
-            status_code=400,
-            detail="Unable to decode image. The file may be corrupted or in an unsupported format.",
-        )
-
-    # --- Run the AI scan ---
-    logger.info("Starting scan for '%s' (%d bytes)", file.filename, len(data))
-    processed_img, findings = guard.scan(img)
-    logger.info("Scan complete: %d issues found", len(findings))
-
-    # --- Encode image to Base64 ---
-    _, buffer = cv2.imencode('.jpg', processed_img)
-    img_base64 = base64.b64encode(buffer).decode('utf-8')
-
-    # --- Return the Dashboard Data Payload ---
-    return JSONResponse(content={
-        "status": "success",
-        "total_issues": len(findings),
-        "details": findings,
-        "image_data": img_base64
-    })
+    logger.info("Shutting down AegisLogix …")
 
 
-@app.get("/")
-def health_check() -> dict[str, str]:
-    return {"status": "AegisLogix Online"}
+# ---------------------------------------------------------------------------
+# App factory
+# ---------------------------------------------------------------------------
+
+def create_app() -> FastAPI:
+    """Build and return the fully configured FastAPI application."""
+    settings = get_settings()
+
+    # -- Logging -------------------------------------------------------------
+    logging.basicConfig(
+        level=settings.log_level.upper(),
+        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        stream=sys.stdout,
+        force=True,
+    )
+
+    # -- App -----------------------------------------------------------------
+    application = FastAPI(
+        title="AegisLogix Control API",
+        version=settings.app_version,
+        description="Industrial computer vision API for shipping-container damage detection.",
+        lifespan=_lifespan,
+    )
+
+    # -- CORS ----------------------------------------------------------------
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # -- Exception handlers --------------------------------------------------
+    register_exception_handlers(application)
+
+    # -- Routers -------------------------------------------------------------
+    # Import here to avoid circular imports; routes depend on app.state
+    # which is populated during lifespan.
+    from src.api.routes import health_router, v1_router
+
+    application.include_router(health_router)
+    application.include_router(v1_router)
+
+    return application
+
+
+# ---------------------------------------------------------------------------
+# Module-level app instance (used by Uvicorn / Gunicorn).
+# ---------------------------------------------------------------------------
+app = create_app()
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    _settings = get_settings()
+    uvicorn.run(
+        "src.main:app",
+        host="0.0.0.0",
+        port=_settings.port,
+        log_level=_settings.log_level,
+        reload=True,
+    )
