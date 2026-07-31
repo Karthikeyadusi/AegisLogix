@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     )
 
     # -- Paths ---------------------------------------------------------------
-    model_path: str = str(_BACKEND_DIR / "models" / "aegis_v1.onnx")
+    onnx_model_path: str = str(_BACKEND_DIR / "models" / "aegis_v1.onnx")
 
     # -- Inference -----------------------------------------------------------
     confidence_threshold: float = 0.40
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     ]
 
     # -- Server --------------------------------------------------------------
-    port: int = 10000
+    port: int = 8000
     workers: int = 1
     log_level: str = "info"
 
