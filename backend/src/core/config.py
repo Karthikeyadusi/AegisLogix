@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://aegislogix.vercel.app",
         "https://aegis-logix.vercel.app",
     ]
 

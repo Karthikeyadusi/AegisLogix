@@ -11,12 +11,13 @@ def test_settings_defaults():
     # Ensure no env vars interfere
     with patch.dict(os.environ, clear=True):
         settings = Settings()
-        assert settings.port == 10000
+        assert settings.port == 8000
         assert settings.workers == 1
         assert settings.confidence_threshold == 0.40
         assert settings.inference_image_size == 416
         assert settings.max_upload_size_bytes == 10 * 1024 * 1024
         assert "http://localhost:5173" in settings.allowed_origins
+        assert "https://aegislogix.vercel.app" in settings.allowed_origins
 
 
 def test_settings_from_env():
