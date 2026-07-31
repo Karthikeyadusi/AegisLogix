@@ -1,4 +1,4 @@
-import { useState, type SyntheticEvent } from 'react';
+import { useState, useEffect, type SyntheticEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { BoundingBoxOverlay } from './BoundingBoxOverlay';
@@ -38,6 +38,22 @@ export function ImageCanvas({
     height: number;
   }>({ width: 0, height: 0 });
 
+  const [elapsedMs, setElapsedMs] = useState<number>(0);
+
+  useEffect(() => {
+    if (!isAnalyzing) {
+      setElapsedMs(0);
+      return;
+    }
+
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      setElapsedMs(Date.now() - startTime);
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [isAnalyzing]);
+
   const handleImageLoad = (e: SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     setNaturalDimensions({
@@ -54,7 +70,7 @@ export function ImageCanvas({
       {annotatedBase64 && (
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">
-            Viewport Projection
+            View Mode
           </span>
 
           <div className="bg-zinc-900 border border-zinc-800 p-0.5 rounded flex items-center gap-1">
@@ -140,7 +156,7 @@ export function ImageCanvas({
         {/* Neural Scanning Animation Overlay */}
         {isAnalyzing && (
           <div
-            className="absolute inset-0 bg-zinc-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center overflow-hidden z-20"
+            className="absolute inset-0 bg-zinc-950/70 backdrop-blur-[2px] flex flex-col items-center justify-center overflow-hidden z-20"
             aria-live="polite"
             aria-busy="true"
           >
@@ -152,11 +168,14 @@ export function ImageCanvas({
             />
 
             <div className="relative z-20 flex flex-col items-center p-6 bg-zinc-900/90 border border-zinc-700/80 rounded-md backdrop-blur-md shadow-2xl">
-              <Loader2 className="w-10 h-10 text-blue-400 animate-spin mb-4" />
+              <Loader2 className="w-9 h-9 text-blue-400 animate-spin mb-3" />
               <p className="text-zinc-200 font-mono text-xs tracking-widest uppercase">
                 Neural Scan in Progress...
               </p>
-              <span className="text-[10px] font-mono text-zinc-500 mt-1">
+              <span className="text-[11px] font-mono text-blue-400 font-semibold mt-1">
+                {(elapsedMs / 1000).toFixed(1)}s elapsed
+              </span>
+              <span className="text-[10px] font-mono text-zinc-500 mt-0.5">
                 YOLOv5 ONNX Runtime Inference
               </span>
             </div>

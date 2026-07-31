@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Upload, AlertCircle } from 'lucide-react';
+import { Upload, AlertCircle, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export interface DropzoneProps {
   onFileSelect: (file: File) => void;
   disabled?: boolean;
+  isBackendReady?: boolean;
   className?: string;
 }
 
@@ -14,6 +15,7 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 export function Dropzone({
   onFileSelect,
   disabled = false,
+  isBackendReady = true,
   className,
 }: DropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -99,17 +101,17 @@ export function Dropzone({
           tabIndex={-1}
         />
 
-        {/* Industrial Container SVG Wireframe */}
+        {/* Industrial Container SVG Icon */}
         <div className="w-16 h-16 mb-4 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
           <Upload className="w-7 h-7" />
         </div>
 
         <h3 className="text-base font-semibold text-zinc-100 mb-1">
-          Stage Container Imagery
+          Upload Container Inspection Photo
         </h3>
 
         <p className="text-xs text-zinc-400 max-w-sm leading-relaxed mb-6">
-          Drag and drop container inspection photos or click to browse local storage.
+          Drag and drop container inspection imagery or click to select a local file.
         </p>
 
         <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-500 uppercase tracking-widest">
@@ -122,6 +124,15 @@ export function Dropzone({
           <span>MAX 10MB</span>
         </div>
       </div>
+
+      {!isBackendReady && (
+        <div className="p-3 bg-amber-950/30 border border-amber-900/40 rounded flex items-start gap-2.5 text-xs text-amber-300">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+          <span>
+            Backend hosted on free-tier infrastructure. Initial inspection request may take 15-30s if process is waking up from sleep.
+          </span>
+        </div>
+      )}
 
       {validationError && (
         <div className="p-3 bg-red-950/40 border border-red-900/50 rounded flex items-start gap-2.5 text-xs text-red-300">

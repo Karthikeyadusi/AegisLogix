@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { TelemetryRow } from './TelemetryRow';
 import { MetricCard } from '../common/MetricCard';
 import type { DetectionDetail } from '../../types/api';
@@ -57,6 +57,24 @@ export function TelemetryList({
         return detail.class_name.toLowerCase() === activeClassFilter.toLowerCase();
       });
   }, [details, activeClassFilter]);
+
+  if (details.length === 0) {
+    return (
+      <div className={cn('p-6 rounded-md border border-emerald-900/50 bg-emerald-950/20 text-center space-y-3', className)}>
+        <div className="w-10 h-10 rounded-full bg-emerald-900/40 border border-emerald-700/50 flex items-center justify-center mx-auto text-emerald-400">
+          <ShieldCheck className="w-6 h-6" />
+        </div>
+        <div className="space-y-1">
+          <h4 className="text-sm font-semibold text-emerald-200">
+            No Structural Damage Detected
+          </h4>
+          <p className="text-xs text-emerald-400/80 max-w-xs mx-auto leading-relaxed">
+            Neural inspection pass complete. No structural anomalies met or exceeded the 0.40 confidence threshold.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -118,7 +136,7 @@ export function TelemetryList({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
-            Detected Telemetry ({filteredDetailsWithIndex.length})
+            Detections ({filteredDetailsWithIndex.length})
           </span>
           {activeClassFilter && (
             <button

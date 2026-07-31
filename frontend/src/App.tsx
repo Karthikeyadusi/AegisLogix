@@ -1,12 +1,15 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, ScanLine } from 'lucide-react';
 
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { HeroSection } from './components/landing/HeroSection';
-import { ArchitectureBlueprint } from './components/landing/ArchitectureBlueprint';
+import { ProblemContext } from './components/landing/ProblemContext';
+import { EngineeringJourney } from './components/landing/EngineeringJourney';
 import { ModelMetrics } from './components/landing/ModelMetrics';
+import { ArchitectureBlueprint } from './components/landing/ArchitectureBlueprint';
+import { TechnologyDecisions } from './components/landing/TechnologyDecisions';
 
 import { Dropzone } from './components/workspace/Dropzone';
 import { ImageCanvas } from './components/workspace/ImageCanvas';
@@ -24,7 +27,6 @@ export default function App() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const workspaceRef = useRef<HTMLDivElement>(null);
-  const architectureRef = useRef<HTMLDivElement>(null);
 
   // Hooks
   const backendStatus = useBackendStatus();
@@ -62,10 +64,6 @@ export default function App() {
     workspaceRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const scrollToArchitecture = () => {
-    architectureRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   // Register hotkeys
   useKeyboardShortcuts({
     onResetWorkspace: handleResetWorkspace,
@@ -84,20 +82,32 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-12 pb-16">
-        {/* Presentation & Hero Framing */}
-        <HeroSection
-          onLaunchWorkspace={scrollToWorkspace}
-          onViewArchitecture={scrollToArchitecture}
-        />
+        {/* Section 1 — Hero */}
+        <HeroSection onLaunchWorkspace={scrollToWorkspace} />
 
-        {/* Model Metrics Benchmarks */}
+        {/* Section 2 — Problem Context */}
+        <ProblemContext />
+
+        {/* Section 3 — Engineering & Training Journey */}
+        <EngineeringJourney />
+
+        {/* Section 4 — Model Benchmarks & Validation */}
         <ModelMetrics />
 
-        {/* Inspection Workspace Container */}
+        {/* Section 5 — Architecture Pipeline */}
+        <ArchitectureBlueprint />
+
+        {/* Section 6 — Technology Decisions & Trade-Offs */}
+        <TechnologyDecisions />
+
+        {/* Section 7 — Inspection Workspace */}
         <section ref={workspaceRef} className="pt-4 space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-zinc-800 pb-4">
             <div>
-              <h2 className="text-xl font-bold tracking-tight text-zinc-100">
+              <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest block">
+                06 / Interactive Tooling
+              </span>
+              <h2 className="text-xl font-bold tracking-tight text-zinc-100 mt-1">
                 Inspection Workspace
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
@@ -153,6 +163,7 @@ export default function App() {
                     <Dropzone
                       onFileSelect={handleFileSelect}
                       disabled={analysis.isAnalyzing}
+                      isBackendReady={backendStatus.isReady}
                     />
                   </motion.div>
                 ) : (
@@ -184,8 +195,8 @@ export default function App() {
               {!previewUrl ? (
                 /* Empty Telemetry Placeholder */
                 <Card className="p-8 text-center flex flex-col items-center justify-center min-h-[320px] text-zinc-500">
-                  <div className="w-12 h-12 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-3 text-zinc-600">
-                    <RefreshCw className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-3 text-zinc-400">
+                    <ScanLine className="w-6 h-6" />
                   </div>
                   <h4 className="text-sm font-semibold text-zinc-300 mb-1">
                     Awaiting Inspection Imagery
@@ -222,11 +233,6 @@ export default function App() {
             </div>
           </div>
         </section>
-
-        {/* Architecture Blueprint Section */}
-        <div ref={architectureRef}>
-          <ArchitectureBlueprint />
-        </div>
       </main>
 
       {/* System Telemetry Footer */}
