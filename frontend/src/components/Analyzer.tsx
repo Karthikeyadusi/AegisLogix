@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Upload, Shield, AlertTriangle, CheckCircle2, Loader2, RefreshCw, ChevronRight, FileDown, FileJson } from 'lucide-react';
 
 interface DamageDetail {
-  class: string;
-  conf: number;
+  class_name: string;
+  confidence: number;
 }
 
 interface AnalysisResult {
@@ -135,8 +135,8 @@ export default function Analyzer() {
 
   const handleDownloadReport = () => {
     if (!result || !file) return;
-    const criticalCount = result.details.filter(d => d.conf >= 0.70).length;
-    const minorCount = result.details.filter(d => d.conf < 0.70).length;
+    const criticalCount = result.details.filter(d => d.confidence >= 0.70).length;
+    const minorCount = result.details.filter(d => d.confidence < 0.70).length;
     const reportLines = [
       "==================================================",
       "          AEGISLOGIX VISION INSPECTION REPORT     ",
@@ -152,9 +152,9 @@ export default function Analyzer() {
       "DETECTION BREAKDOWN:",
       "--------------------------------------------------",
       ...result.details.map((detail, idx) => (
-        `${idx + 1}. [${detail.class.toUpperCase()}]` +
-        ` - Confidence: ${(detail.conf * 100).toFixed(1)}%` +
-        ` - Severity: ${detail.conf >= 0.70 ? 'CRITICAL' : 'MINOR'}`
+        `${idx + 1}. [${detail.class_name.toUpperCase()}]` +
+        ` - Confidence: ${(detail.confidence * 100).toFixed(1)}%` +
+        ` - Severity: ${detail.confidence >= 0.70 ? 'CRITICAL' : 'MINOR'}`
       )),
       "--------------------------------------------------",
       "AegisLogix v1.1.0 (STABLE) - Inspection Telemetry",
@@ -386,7 +386,7 @@ export default function Analyzer() {
                   <div className="flex gap-6 mb-4">
                     <div className="flex flex-col">
                       <span className={`text-4xl font-bold ${result.total_issues > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                        {result.details.filter(d => d.conf >= 0.70).length}
+                        {result.details.filter(d => d.confidence >= 0.70).length}
                       </span>
                       <span className="text-slate-400 text-xs uppercase tracking-wider font-semibold flex items-center gap-1 mt-1">
                         <div className="w-2 h-2 rounded-full bg-red-500" /> Critical
@@ -394,7 +394,7 @@ export default function Analyzer() {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-4xl font-bold text-amber-500">
-                        {result.details.filter(d => d.conf < 0.70).length}
+                        {result.details.filter(d => d.confidence < 0.70).length}
                       </span>
                       <span className="text-slate-400 text-xs uppercase tracking-wider font-semibold flex items-center gap-1 mt-1">
                         <div className="w-2 h-2 rounded-full bg-amber-500" /> Minor
@@ -453,7 +453,7 @@ export default function Analyzer() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {result.details.map((detail, idx) => {
-              const isCritical = detail.conf >= 0.70;
+              const isCritical = detail.confidence >= 0.70;
               const severityColor = isCritical ? 'text-red-400' : 'text-amber-400';
               const barColor = isCritical ? 'bg-red-500' : 'bg-amber-500';
               return (
@@ -469,10 +469,10 @@ export default function Analyzer() {
                       <div className={`w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs font-bold border border-slate-700 ${severityColor}`}>
                         {idx + 1}
                       </div>
-                      <span className="font-semibold text-white capitalize text-lg">{detail.class}</span>
+                      <span className="font-semibold text-white capitalize text-lg">{detail.class_name}</span>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-sm font-mono text-slate-400">{(detail.conf * 100).toFixed(1)}% CONF</span>
+                      <span className="text-sm font-mono text-slate-400">{(detail.confidence * 100).toFixed(1)}% CONF</span>
                       <span className={`text-[10px] uppercase font-bold tracking-wider ${severityColor}`}>
                         {isCritical ? 'Critical' : 'Minor'}
                       </span>
@@ -482,7 +482,7 @@ export default function Analyzer() {
                   <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${detail.conf * 100}%` }}
+                      animate={{ width: `${detail.confidence * 100}%` }}
                       transition={{ duration: 1, delay: 0.3 + (idx * 0.1) }}
                       className={`h-full rounded-full ${barColor}`}
                     />
