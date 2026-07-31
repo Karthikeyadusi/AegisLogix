@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-export type ViewMode = 'svg_overlay' | 'annotated' | 'raw';
+export type ViewMode = 'annotated' | 'raw' | 'svg_overlay';
 
 export interface WorkspaceState {
   selectedAnomalyIndex: number | null;
@@ -17,7 +17,7 @@ export function useWorkspaceState() {
   const [selectedAnomalyIndex, setSelectedAnomalyIndex] = useState<number | null>(null);
   const [hoveredAnomalyIndex, setHoveredAnomalyIndex] = useState<number | null>(null);
   const [activeClassFilter, setActiveClassFilter] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('svg_overlay');
+  const [viewMode, setViewMode] = useState<ViewMode>('annotated');
 
   const selectAnomaly = useCallback((index: number | null) => {
     setSelectedAnomalyIndex(index);
@@ -36,7 +36,7 @@ export function useWorkspaceState() {
     setSelectedAnomalyIndex(null);
     setHoveredAnomalyIndex(null);
     setActiveClassFilter(null);
-    setViewMode('svg_overlay');
+    setViewMode('annotated');
   }, []);
 
   return {

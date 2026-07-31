@@ -75,17 +75,6 @@ export function ImageCanvas({
 
           <div className="bg-zinc-900 border border-zinc-800 p-0.5 rounded flex items-center gap-1">
             <button
-              onClick={() => onViewModeChange('svg_overlay')}
-              className={cn(
-                'px-2.5 py-1 text-xs font-mono uppercase rounded transition-colors',
-                viewMode === 'svg_overlay'
-                  ? 'bg-zinc-800 text-zinc-100 font-semibold shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              )}
-            >
-              Interactive Vector
-            </button>
-            <button
               onClick={() => onViewModeChange('annotated')}
               className={cn(
                 'px-2.5 py-1 text-xs font-mono uppercase rounded transition-colors',
@@ -106,6 +95,17 @@ export function ImageCanvas({
               )}
             >
               Raw Input
+            </button>
+            <button
+              onClick={() => onViewModeChange('svg_overlay')}
+              className={cn(
+                'px-2.5 py-1 text-xs font-mono uppercase rounded transition-colors',
+                viewMode === 'svg_overlay'
+                  ? 'bg-zinc-800 text-zinc-100 font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              )}
+            >
+              Interactive Vector
             </button>
           </div>
         </div>
