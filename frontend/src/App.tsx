@@ -7,9 +7,8 @@ import { Footer } from './components/layout/Footer';
 import { HeroSection } from './components/landing/HeroSection';
 import { ProblemContext } from './components/landing/ProblemContext';
 import { EngineeringJourney } from './components/landing/EngineeringJourney';
-import { ModelMetrics } from './components/landing/ModelMetrics';
-import { ArchitectureBlueprint } from './components/landing/ArchitectureBlueprint';
-import { TechnologyDecisions } from './components/landing/TechnologyDecisions';
+import { SystemOverview } from './components/landing/SystemOverview';
+import { TechnicalDetails } from './components/landing/TechnicalDetails';
 
 import { Dropzone } from './components/workspace/Dropzone';
 import { ImageCanvas } from './components/workspace/ImageCanvas';
@@ -27,6 +26,7 @@ export default function App() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const workspaceRef = useRef<HTMLDivElement>(null);
+  const techSpecsRef = useRef<HTMLDivElement>(null);
 
   // Hooks
   const backendStatus = useBackendStatus();
@@ -64,6 +64,10 @@ export default function App() {
     workspaceRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const scrollToTechSpecs = () => {
+    techSpecsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // Register hotkeys
   useKeyboardShortcuts({
     onResetWorkspace: handleResetWorkspace,
@@ -82,36 +86,30 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-12 pb-16">
-        {/* Section 1 — Hero */}
-        <HeroSection onLaunchWorkspace={scrollToWorkspace} />
+        {/* 1. Hero & Live Demo Preview */}
+        <HeroSection
+          onLaunchWorkspace={scrollToWorkspace}
+          onViewTechSpecs={scrollToTechSpecs}
+        />
 
-        {/* Section 2 — Problem Context */}
+        {/* 2. Problem Statement (3 Cards) */}
         <ProblemContext />
 
-        {/* Section 3 — Engineering & Training Journey */}
+        {/* 3. Engineering & Training Journey */}
         <EngineeringJourney />
 
-        {/* Section 4 — Model Benchmarks & Validation */}
-        <ModelMetrics />
+        {/* 4. System Overview Pipeline */}
+        <SystemOverview />
 
-        {/* Section 5 — Architecture Pipeline */}
-        <ArchitectureBlueprint />
-
-        {/* Section 6 — Technology Decisions & Trade-Offs */}
-        <TechnologyDecisions />
-
-        {/* Section 7 — Inspection Workspace */}
-        <section ref={workspaceRef} className="pt-4 space-y-6">
+        {/* 5. Inspection Workspace (Centerpiece Dashboard) */}
+        <section ref={workspaceRef} className="pt-8 space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-zinc-800 pb-4">
             <div>
-              <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest block">
-                06 / Interactive Tooling
-              </span>
-              <h2 className="text-xl font-bold tracking-tight text-zinc-100 mt-1">
+              <h2 className="text-xl font-bold tracking-tight text-zinc-100">
                 Inspection Workspace
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Stage container imagery to execute neural damage analysis and view SVG telemetry.
+                Upload container imagery to execute neural damage detection and generate SVG vector telemetry.
               </p>
             </div>
 
@@ -233,6 +231,11 @@ export default function App() {
             </div>
           </div>
         </section>
+
+        {/* 6. Technical Details & Deep Dive Section (Bottom) */}
+        <div ref={techSpecsRef}>
+          <TechnicalDetails />
+        </div>
       </main>
 
       {/* System Telemetry Footer */}

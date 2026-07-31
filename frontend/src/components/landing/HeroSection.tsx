@@ -1,83 +1,58 @@
-import { ArrowDown, Cpu, Zap, Target } from 'lucide-react';
+import { ArrowDown, Code2 } from 'lucide-react';
 import { Button } from '../common/Button';
-import { Badge } from '../common/Badge';
+import { DemoPreview } from './DemoPreview';
 
 export interface HeroSectionProps {
   onLaunchWorkspace: () => void;
+  onViewTechSpecs: () => void;
 }
 
-export function HeroSection({ onLaunchWorkspace }: HeroSectionProps) {
+export function HeroSection({ onLaunchWorkspace, onViewTechSpecs }: HeroSectionProps) {
   return (
-    <section className="py-12 lg:py-16 border-b border-zinc-800">
-      <div className="max-w-4xl mx-auto text-center space-y-6">
-        {/* Category Badge */}
-        <div className="flex justify-center">
-          <Badge variant="mono" className="py-1 px-3">
-            Industrial Computer Vision Platform
-          </Badge>
+    <section className="pt-16 pb-12 border-b border-zinc-800/80">
+      <div className="max-w-5xl mx-auto text-center space-y-6">
+        {/* Category Tag */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span>Industrial Computer Vision Engine</span>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-zinc-100 leading-tight">
-          AI-Powered Shipping Container Damage Detection
+        {/* Powerful Headline */}
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-zinc-100 leading-[1.1]">
+          Sub-Second Shipping Container <br className="hidden sm:inline" />
+          Damage Detection
         </h1>
 
-        {/* Subheadline */}
+        {/* Supporting Sentence */}
         <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          Sub-second structural damage detection powered by a fine-tuned YOLOv5 model compiled to ONNX Runtime for edge and cloud deployment.
+          Automated structural defect localization powered by a custom-trained YOLOv5 neural network and ONNX Runtime execution engine.
         </p>
 
-        {/* Action Button */}
-        <div className="pt-2 flex justify-center">
+        {/* CTAs */}
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Button
             variant="primary"
             size="lg"
             onClick={onLaunchWorkspace}
-            className="w-full sm:w-auto font-mono text-sm uppercase"
+            className="w-full sm:w-auto font-mono text-xs uppercase tracking-wider px-6 py-3"
           >
-            Try Inspection Workspace
-            <ArrowDown className="w-4 h-4 ml-1" />
+            Launch Inspection
+            <ArrowDown className="w-4 h-4 ml-1.5" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={onViewTechSpecs}
+            className="w-full sm:w-auto font-mono text-xs uppercase tracking-wider px-6 py-3"
+          >
+            View Technical Specs
+            <Code2 className="w-4 h-4 ml-1.5" />
           </Button>
         </div>
 
-        {/* Three Value Proposition Cards */}
-        <div className="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-3xl mx-auto">
-          <div className="p-4 rounded border border-zinc-800 bg-zinc-900/40 flex items-start gap-3">
-            <Zap className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <div className="text-xs font-mono font-bold text-zinc-200 uppercase">
-                ONNX Inference
-              </div>
-              <div className="text-[11px] text-zinc-400 mt-0.5">
-                5.1ms GPU latency with lightweight ONNX Runtime engine.
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 rounded border border-zinc-800 bg-zinc-900/40 flex items-start gap-3">
-            <Target className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-            <div>
-              <div className="text-xs font-mono font-bold text-zinc-200 uppercase">
-                5 Damage Classes
-              </div>
-              <div className="text-[11px] text-zinc-400 mt-0.5">
-                Detects Dent, Hole, Rust, Deframe, and Minor-Dent.
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 rounded border border-zinc-800 bg-zinc-900/40 flex items-start gap-3">
-            <Cpu className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <div className="text-xs font-mono font-bold text-zinc-200 uppercase">
-                Hardened Backend
-              </div>
-              <div className="text-[11px] text-zinc-400 mt-0.5">
-                FastAPI with streamed size & dimension security guards.
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Live Visual Demo Preview Box */}
+        <DemoPreview />
       </div>
     </section>
   );
