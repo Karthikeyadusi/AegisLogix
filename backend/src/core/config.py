@@ -5,6 +5,7 @@ type validation and sensible defaults. All runtime tunables live here —
 no magic numbers scattered across the codebase.
 """
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -56,8 +57,8 @@ class Settings(BaseSettings):
         "https://aegis-logix.vercel.app",
     ]
 
-    # -- Server --------------------------------------------------------------
-    port: int = 8000
+    # -- Server (Dynamic lookup: PORT -> AEGIS_PORT -> 8000) ----------------
+    port: int = int(os.getenv("PORT") or os.getenv("AEGIS_PORT") or 8000)
     workers: int = 1
     log_level: str = "info"
 

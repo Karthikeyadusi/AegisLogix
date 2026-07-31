@@ -7,7 +7,7 @@
 FROM python:3.10-slim
 
 # -- Environment variables (overridable at runtime) -------------------------
-ENV AEGIS_PORT=10000 \
+ENV AEGIS_PORT=7860 \
     AEGIS_WORKERS=1 \
     AEGIS_LOG_LEVEL=info
 

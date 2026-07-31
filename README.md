@@ -1,3 +1,15 @@
+---
+title: AegisLogix Container Inspection API
+emoji: 🛡️
+colorFrom: blue
+colorTo: gray
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+short_description: Industrial computer vision API for shipping container damage detection.
+---
+
 # AegisLogix
 
 **Computer Vision-Based Shipping Container Damage Detection**
@@ -22,7 +34,41 @@ AegisLogix is an industrial computer vision and object detection deployment syst
 *   **ONNX Deployment**: Exported PyTorch weights to ONNX format, reducing model size to **34.9 MB** and enabling deployment with only the lightweight ONNX Runtime execution engine.
 *   **FastAPI Inference Pipeline**: Engineered a robust, synchronous FastAPI backend that automatically delegates CPU-bound inference execution to a background thread pool, preventing event loop blocking.
 *   **Defensive API Design**: Implemented strict input checks, validation logic for corrupted files, and file size limits (≤10 MB) to prevent server-side Out-Of-Memory (OOM) crashes.
-*   **Industrial Inspection Workflow**: An end-to-end computer vision system connecting image parsing, preprocessing (BGR to RGB conversion, letterboxing, and normalization), forward ONNX graph passes, Non-Maximum Suppression (NMS), coordinate mapping, and base64 rendering.
+*   **Industrial Inspection Workflow**: An end-to-end computer vision system connecting image parsing, preprocessing (BGR to RGB conversion, letterboxing, and normalization), forward ONNX graph passes, Non-Maximum Suppression (NMS), coordinate mapping, and Base64 / SVG rendering.
+
+---
+
+## Deployment Architecture
+
+```text
+Browser Client
+      │
+      ▼
+Vercel (React 19 + Vite)
+      │
+  HTTPS / REST
+      │
+      ▼
+Hugging Face Spaces (Docker SDK)
+      │
+      ▼
+FastAPI v1.1.0 Engine
+      │
+      ▼
+ONNX Runtime Engine
+      │
+      ▼
+YOLOv5s Neural Weights
+```
+
+* **Frontend Host:** Deployed on Vercel (`https://aegislogix.vercel.app`)
+* **Backend Host:** Containerized on Hugging Face Spaces (Docker SDK, Port 7860)
+* **Inference Engine:** FastAPI + ONNX Runtime (`AegisGuard` lifecycle)
+* **Model Architecture:** Custom YOLOv5s object detector (~35 MB weights)
+* **Observability & Probes:** Liveness probe at `/health`, Readiness probe at `/ready`
+
+### Why Hugging Face Spaces?
+The backend is deployed on Hugging Face Spaces (Docker SDK) because it provides an environment well suited to serving machine learning inference workloads while allowing the application to remain fully containerized and deployment-agnostic.
 
 ---
 
@@ -104,7 +150,7 @@ graph LR
 ### Request Flow
 
 1. User uploads an image via the React dashboard
-2. Frontend sends a `POST /analyze` request with the image as `multipart/form-data`
+2. Frontend sends a `POST /api/v1/analyze` request with the image as `multipart/form-data`
 3. Backend validates content type, file size (≤10 MB), and decodes using OpenCV
 4. `AegisGuard.scan()` runs YOLO prediction through ONNX Runtime
 5. Post-processing filters detections by confidence (≥0.40), applies NMS
@@ -149,12 +195,6 @@ Upload (bytes) → Content-type & size validation → cv2.imdecode (BGR)
 → cv2.imencode (JPEG) → Base64 encode → JSON response
 ```
 
-**Measured Benchmarking Speed** (Tesla T4 GPU, Google Colab):
-- Preprocess: 1.3 ms
-- Inference: 5.1 ms
-- Postprocess: 2.8 ms
-*Note: These benchmarks represent GPU execution during model testing in Colab. The deployed CPU backend runs at CPU-bound execution speeds.*
-
 ---
 
 ## Performance
@@ -188,19 +228,24 @@ AegisLogix/
 ├── backend/
 │   ├── models/                # ONNX model weights (gitignored)
 │   ├── src/
-│   │   ├── config.py          # Centralized configuration constants
-│   │   ├── engine.py          # AegisGuard inference wrapper class
-│   │   └── main.py            # FastAPI application and endpoint handlers
-│   ├── test_images/           # Sample test images
+│   │   ├── api/               # API routes and Pydantic schemas
+│   │   ├── core/              # Config, exceptions, logging
+│   │   ├── ml/                # AegisGuard ONNX inference engine
+│   │   ├── services/          # Analyzer business service orchestration
+│   │   └── main.py            # FastAPI application factory
+│   ├── tests/                 # Pytest suite
 │   ├── Dockerfile             # Production container configuration
 │   └── requirements.txt       # Python dependencies
 ├── frontend/
 │   ├── src/
-│   │   ├── components/
-│   │   │   └── Analyzer.tsx   # Main dashboard component
-│   │   ├── App.tsx            # Application layout and footer
+│   │   ├── api/               # Decoupled HTTP API client
+│   │   ├── components/        # Modular UI components (common, landing, workspace)
+│   │   ├── hooks/             # Custom state machine hooks (useAnalysis, useBackendStatus)
+│   │   ├── lib/               # Geometry calculations & export utilities
+│   │   ├── types/             # TypeScript API interfaces
+│   │   ├── App.tsx            # Integrated application root
 │   │   └── main.tsx           # React entry point
-│   ├── .env                   # Environment variables (API URL)
+│   ├── index.html             # HTML title & meta tags
 │   ├── package.json           # Node.js dependencies
 │   └── vite.config.ts         # Vite build configuration
 ├── docs/
@@ -209,8 +254,6 @@ AegisLogix/
 │   ├── DECISIONS.md           # Engineering decision log
 │   └── LIMITATIONS.md         # Known limitations
 ├── complete_model_notebook.ipynb  # Full Colab training notebook
-├── demo.png                   # Static dashboard screenshot
-├── working.gif                # Animated demo
 └── README.md
 ```
 
@@ -256,7 +299,7 @@ The dashboard opens at `http://localhost:5173`.
 ```bash
 cd backend
 docker build -t aegislogix-api .
-docker run -p 10000:10000 aegislogix-api
+docker run -p 7860:7860 aegislogix-api
 ```
 
 ---
@@ -264,24 +307,10 @@ docker run -p 10000:10000 aegislogix-api
 ## Limitations
 
 - **CPU-only inference**: The deployed backend uses `onnxruntime` (CPU provider). Inference is fast for single requests but does not leverage GPU acceleration.
-- **Single-worker deployment**: The Dockerfile runs one Uvicorn worker to stay within 512 MB RAM limits on free-tier hosting. This means requests are processed sequentially.
 - **Dataset scale**: The training dataset contains ~1,150 images across 5 classes. Production-quality detection would require a significantly larger and more diverse dataset.
 - **No authentication**: The API is open. There is no user authentication or API key validation.
 - **No persistence**: Scan results are returned to the client and not stored. There is no database or scan history.
 - **Model accuracy**: The best mAP50 is 0.561. While sufficient for demonstration, this is below production thresholds for safety-critical inspection.
-
-> For detailed discussion, see [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md).
-
----
-
-## Future Work
-
-- GPU inference via `onnxruntime-gpu` or TensorRT for sub-millisecond latency
-- Dataset expansion with additional damage categories and diverse container types
-- Scan history with database persistence
-- Authentication and API rate limiting
-- CI/CD pipeline with model validation tests
-- Batch image processing endpoint
 
 ---
 
