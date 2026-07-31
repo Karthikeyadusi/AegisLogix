@@ -83,7 +83,7 @@ export function ImageCanvas({
                   : 'text-zinc-400 hover:text-zinc-200'
               )}
             >
-              OpenCV Render
+              Analysed Image
             </button>
             <button
               onClick={() => onViewModeChange('raw')}
@@ -94,7 +94,7 @@ export function ImageCanvas({
                   : 'text-zinc-400 hover:text-zinc-200'
               )}
             >
-              Raw Input
+              Original Image
             </button>
             <button
               onClick={() => onViewModeChange('svg_overlay')}
@@ -125,7 +125,7 @@ export function ImageCanvas({
               className="w-full h-auto max-h-[70vh] object-contain block"
             />
           ) : (
-            <div className="relative inline-block max-w-full">
+            <div className="relative w-full h-full flex items-center justify-center">
               <motion.img
                 key="raw"
                 initial={{ opacity: 0 }}

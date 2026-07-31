@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from 'react';
 import type { DetectionDetail } from '../../types/api';
 
 export interface BoundingBoxOverlayProps {
@@ -19,27 +20,83 @@ export function BoundingBoxOverlay({
   onSelectAnomaly,
   onHoverAnomaly,
 }: BoundingBoxOverlayProps) {
-  if (naturalWidth <= 0 || naturalHeight <= 0 || detections.length === 0) {
-    return null;
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
+
+  useEffect(() => {
+    if (!svgRef.current) return;
+    const updateSize = () => {
+      if (svgRef.current) {
+        const rect = svgRef.current.getBoundingClientRect();
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(svgRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  if (
+    naturalWidth <= 0 ||
+    naturalHeight <= 0 ||
+    detections.length === 0 ||
+    containerSize.width <= 0 ||
+    containerSize.height <= 0
+  ) {
+    return (
+      <svg
+        ref={svgRef}
+        className="absolute inset-0 w-full h-full pointer-events-none z-10"
+      />
+    );
+  }
+
+  const C_w = containerSize.width;
+  const C_h = containerSize.height;
+
+  const AR_img = naturalWidth / naturalHeight;
+  const AR_cnt = C_w / C_h;
+
+  let rendered_w = C_w;
+  let rendered_h = C_h;
+  let offset_x = 0;
+  let offset_y = 0;
+
+  if (AR_img > AR_cnt) {
+    // Width-constrained letterboxing
+    rendered_w = C_w;
+    rendered_h = C_w / AR_img;
+    offset_x = 0;
+    offset_y = (C_h - rendered_h) / 2;
+  } else {
+    // Height-constrained pillarboxing
+    rendered_h = C_h;
+    rendered_w = C_h * AR_img;
+    offset_y = 0;
+    offset_x = (C_w - rendered_w) / 2;
   }
 
   const activeIndex = hoveredIndex !== null ? hoveredIndex : selectedIndex;
 
-  // Compute resolution scale factor so stroke and text remain legible at any image size
-  const baseDim = Math.min(naturalWidth, naturalHeight);
-  const scaleFactor = Math.max(0.8, baseDim / 600);
-
   return (
     <svg
+      ref={svgRef}
       className="absolute inset-0 w-full h-full pointer-events-none z-10"
-      viewBox={`0 0 ${naturalWidth} ${naturalHeight}`}
-      preserveAspectRatio="none"
       aria-label="Detection Bounding Boxes Vector Overlay"
     >
       {detections.map((detail, idx) => {
         const [x1, y1, x2, y2] = detail.bbox;
-        const width = Math.max(0, x2 - x1);
-        const height = Math.max(0, y2 - y1);
+
+        // Calculate exact pixel position on container canvas
+        const rx1 = offset_x + (x1 / naturalWidth) * rendered_w;
+        const ry1 = offset_y + (y1 / naturalHeight) * rendered_h;
+        const rw = Math.max(0, ((x2 - x1) / naturalWidth) * rendered_w);
+        const rh = Math.max(0, ((y2 - y1) / naturalHeight) * rendered_h);
 
         const isSelected = selectedIndex === idx;
         const isHovered = hoveredIndex === idx;
@@ -52,11 +109,11 @@ export function BoundingBoxOverlay({
         const fillColor = isCritical ? 'rgba(239, 68, 68, 0.18)' : 'rgba(245, 158, 11, 0.18)';
 
         const opacity = isDimmed ? 0.25 : 1.0;
-        const strokeWidth = (isHighlighted ? 3.5 : 2) * scaleFactor;
+        const strokeWidth = isHighlighted ? 3 : 2;
 
-        const fontSize = Math.max(10, Math.round(11 * scaleFactor));
-        const paddingX = Math.round(5 * scaleFactor);
-        const paddingY = Math.round(3 * scaleFactor);
+        const fontSize = 11;
+        const paddingX = 6;
+        const paddingY = 3;
 
         const confPct = (detail.confidence * 100).toFixed(1);
         const labelText = `${detail.class_name.toUpperCase()} (${confPct}%)`;
@@ -66,7 +123,7 @@ export function BoundingBoxOverlay({
         const badgeHeight = fontSize + paddingY * 2;
 
         // Position badge above bbox if room allows, else inside
-        const badgeY = y1 - badgeHeight >= 0 ? y1 - badgeHeight : y1;
+        const badgeY = ry1 - badgeHeight >= offset_y ? ry1 - badgeHeight : ry1;
 
         return (
           <g
@@ -82,29 +139,29 @@ export function BoundingBoxOverlay({
           >
             {/* Vector Rectangle */}
             <rect
-              x={x1}
-              y={y1}
-              width={width}
-              height={height}
+              x={rx1}
+              y={ry1}
+              width={rw}
+              height={rh}
               fill={fillColor}
               stroke={strokeColor}
               strokeWidth={strokeWidth}
-              rx={2 * scaleFactor}
+              rx={2}
             />
 
             {/* Label Background Badge */}
             <rect
-              x={x1}
+              x={rx1}
               y={badgeY}
               width={badgeWidth}
               height={badgeHeight}
               fill={strokeColor}
-              rx={2 * scaleFactor}
+              rx={2}
             />
 
             {/* Label Text */}
             <text
-              x={x1 + paddingX}
+              x={rx1 + paddingX}
               y={badgeY + fontSize + paddingY - 1}
               fill="#09090b"
               fontSize={fontSize}
