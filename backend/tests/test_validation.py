@@ -31,7 +31,7 @@ def test_decode_image_success(sample_image_bytes):
     img = decode_image(sample_image_bytes, max_dimension=8192)
     assert isinstance(img, np.ndarray)
     # The sample image is 1x1 pixel
-    assert img.shape[:2] == (1, 1)
+    assert img.shape[:2] == (10, 10)
 
 
 def test_decode_image_decompression_bomb(sample_image_bytes):

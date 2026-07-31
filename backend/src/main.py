@@ -41,9 +41,9 @@ async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     settings = get_settings()
 
-    logger.info("Loading AegisGuard engine from %s …", settings.model_path)
+    logger.info("Loading AegisGuard engine from %s …", settings.onnx_model_path)
     engine = AegisGuard(
-        model_path=settings.model_path,
+        model_path=settings.onnx_model_path,
         confidence_threshold=settings.confidence_threshold,
         inference_image_size=settings.inference_image_size,
     )

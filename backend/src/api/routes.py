@@ -62,7 +62,7 @@ def readiness_check(request: Request) -> ReadinessResponse:
     return ReadinessResponse(
         status="ready" if loaded else "not_ready",
         model_loaded=loaded,
-        model_path=settings.model_path,
+        model_path=settings.onnx_model_path,
     )
 
 
